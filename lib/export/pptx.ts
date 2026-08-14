@@ -1,7 +1,11 @@
 "use client";
 
 import pptxgen from "pptxgenjs";
-import type { StoredManual, StoredStep } from "@/app/manuals/local-store";
+import type {
+  StoredManual,
+  StoredStep,
+  StoredStepImage,
+} from "@/app/manuals/local-store";
 
 const OFFICE_FONT = "Meiryo";
 const COLORS = {
@@ -21,6 +25,64 @@ const textStyle = {
   breakLine: false,
   fit: "shrink" as const,
 };
+
+type ImageSize = {
+  width: number;
+  height: number;
+};
+
+type ImageBox = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+function getImageSize(dataUrl: string): Promise<ImageSize> {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () =>
+      resolve({
+        width: image.naturalWidth || image.width,
+        height: image.naturalHeight || image.height,
+      });
+    image.onerror = () => resolve({ width: 16, height: 9 });
+    image.src = dataUrl;
+  });
+}
+
+function fitImageToBox(size: ImageSize, box: ImageBox): ImageBox {
+  const imageRatio = size.width / size.height;
+  const boxRatio = box.w / box.h;
+
+  if (imageRatio > boxRatio) {
+    return {
+      x: box.x,
+      y: box.y,
+      w: box.w,
+      h: box.w / imageRatio,
+    };
+  }
+
+  return {
+    x: box.x,
+    y: box.y,
+    w: box.h * imageRatio,
+    h: box.h,
+  };
+}
+
+async function addContainedImage(
+  slide: pptxgen.Slide,
+  image: StoredStepImage,
+  box: ImageBox
+) {
+  const fitted = fitImageToBox(await getImageSize(image.dataUrl), box);
+  slide.addImage({
+    data: image.dataUrl,
+    ...fitted,
+  });
+}
 
 function addLabel(slide: pptxgen.Slide, text: string, x: number, y: number, w: number) {
   slide.addText(text, {
@@ -107,7 +169,7 @@ function addCoverSlide(pptx: pptxgen, manual: StoredManual) {
   );
 }
 
-function addStepSlide(pptx: pptxgen, step: StoredStep, stepIndex: number) {
+async function addStepSlide(pptx: pptxgen, step: StoredStep, stepIndex: number) {
   const slide = pptx.addSlide();
   slide.background = { color: "FFFFFF" };
   addLabel(slide, `STEP ${stepIndex}`, 0.7, 0.55, 1.6);
@@ -135,26 +197,22 @@ function addStepSlide(pptx: pptxgen, step: StoredStep, stepIndex: number) {
     });
     addBodyText(slide, step.description, 1.05, 2.15, 11.1, 2.9, 17);
   } else if (images.length === 1) {
-    slide.addImage({
-      data: images[0].dataUrl,
+    await addContainedImage(slide, images[0], {
       x: 0.75,
       y: 1.75,
       w: 11.85,
       h: 3.35,
-      sizing: { type: "contain", x: 0.75, y: 1.75, w: 11.85, h: 3.35 },
     });
   } else {
-    images.forEach((image, index) => {
+    await Promise.all(images.map((image, index) => {
       const x = index === 0 ? 0.75 : 6.75;
-      slide.addImage({
-        data: image.dataUrl,
+      return addContainedImage(slide, image, {
         x,
         y: 1.75,
         w: 5.65,
         h: 3.35,
-        sizing: { type: "contain", x, y: 1.75, w: 5.65, h: 3.35 },
       });
-    });
+    }));
   }
 
   if (images.length > 0) {
@@ -192,7 +250,9 @@ export async function createPowerPointBlob(manual: StoredManual): Promise<Blob> 
   };
 
   addCoverSlide(pptx, manual);
-  manual.steps.forEach((step, index) => addStepSlide(pptx, step, index + 1));
+  for (const [index, step] of manual.steps.entries()) {
+    await addStepSlide(pptx, step, index + 1);
+  }
 
   return (await pptx.write({ outputType: "blob", compression: true })) as Blob;
 }
