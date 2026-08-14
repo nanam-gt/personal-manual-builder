@@ -28,6 +28,7 @@ const textStyle = {
   breakLine: false,
   fit: "shrink" as const,
 };
+const RECT_SHAPE = "rect" as const;
 
 type ImageSize = {
   width: number;
@@ -124,7 +125,7 @@ function addBodyText(
 }
 
 function addDescriptionPanel(slide: pptxgen.Slide, text: string) {
-  slide.addShape(pptxgen.ShapeType.rect, {
+  slide.addShape(RECT_SHAPE, {
     x: 8.72,
     y: 1.72,
     w: 3.65,
@@ -159,7 +160,7 @@ function addDescriptionPanel(slide: pptxgen.Slide, text: string) {
 }
 
 function addWarningPanel(slide: pptxgen.Slide, warning: string) {
-  slide.addShape(pptxgen.ShapeType.rect, {
+  slide.addShape(RECT_SHAPE, {
     x: 8.72,
     y: 4.3,
     w: 3.65,
@@ -197,7 +198,7 @@ function addWarningPanel(slide: pptxgen.Slide, warning: string) {
 function addCoverSlide(pptx: pptxgen, manual: StoredManual) {
   const slide = pptx.addSlide();
   slide.background = { color: "FFFFFF" };
-  slide.addShape(pptx.ShapeType.rect, {
+  slide.addShape(RECT_SHAPE, {
     x: 0,
     y: 0,
     w: 13.333,
@@ -205,7 +206,7 @@ function addCoverSlide(pptx: pptxgen, manual: StoredManual) {
     fill: { color: "F6F7F9" },
     line: { color: "F6F7F9" },
   });
-  slide.addShape(pptx.ShapeType.rect, {
+  slide.addShape(RECT_SHAPE, {
     x: 0.7,
     y: 0.65,
     w: 0.12,
@@ -261,7 +262,7 @@ async function addStepSlide(pptx: pptxgen, step: StoredStep, stepIndex: number) 
 
   const images = step.images.slice(0, 2);
   if (images.length === 0) {
-    slide.addShape(pptx.ShapeType.rect, {
+    slide.addShape(RECT_SHAPE, {
       x: 0.75,
       y: 1.75,
       w: 7.55,
