@@ -1,13 +1,17 @@
 import { KeyRound } from "lucide-react";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE } from "@/lib/auth";
+import { getCurrentAdmin } from "@/lib/auth/session";
 import { login } from "./actions";
 
-export default async function LoginPage() {
-  const cookieStore = await cookies();
+type LoginPageProps = {
+  searchParams: Promise<{ error?: string }>;
+};
 
-  if (cookieStore.get(SESSION_COOKIE)?.value) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const admin = await getCurrentAdmin();
+  const { error } = await searchParams;
+
+  if (admin) {
     redirect("/manuals");
   }
 
@@ -18,6 +22,9 @@ export default async function LoginPage() {
           <KeyRound aria-hidden="true" size={28} />
         </div>
         <h1 id="login-title">ログイン</h1>
+        {error === "invalid" ? (
+          <p className="form-error">メールまたはパスワードが違います。</p>
+        ) : null}
         <form className="stack" action={login}>
           <label>
             メール

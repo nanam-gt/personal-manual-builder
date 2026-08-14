@@ -110,6 +110,16 @@ label {
   width: 48px;
 }
 
+.form-error {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 7px;
+  color: #be123c;
+  font-size: 14px;
+  margin: 16px 0 0;
+  padding: 10px 12px;
+}
+
 .stack,
 .form-section,
 .edit-pane {

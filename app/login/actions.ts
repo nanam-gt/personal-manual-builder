@@ -2,11 +2,19 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
+import { authenticateAdmin } from "@/lib/auth/session";
+import { SESSION_COOKIE } from "@/lib/auth";
 
-export async function login() {
-  const cookieStore = await cookies();
+export async function login(formData: FormData) {
+  const email = String(formData.get("email") ?? "");
+  const password = String(formData.get("password") ?? "");
+  const authenticated = await authenticateAdmin(email, password);
 
-  cookieStore.set(SESSION_COOKIE, "phase-2-local-session", sessionCookieOptions);
+  if (!authenticated) {
+    const cookieStore = await cookies();
+    cookieStore.delete(SESSION_COOKIE);
+    redirect("/login?error=invalid");
+  }
+
   redirect("/manuals");
 }
