@@ -10,19 +10,30 @@ import {
 } from "docx";
 import type { StoredManual, StoredStep, StoredStepImage } from "@/app/manuals/local-store";
 
+const OFFICE_FONT = "Meiryo";
+
 const text = (value: string, fallback = "") => value.trim() || fallback;
+
+const run = (
+  value: string,
+  options: { bold?: boolean; color?: string; size?: number } = {}
+) =>
+  new TextRun({
+    text: value,
+    font: OFFICE_FONT,
+    ...options,
+  });
 
 const paragraph = (value: string) =>
   new Paragraph({
-    children: [new TextRun({ text: value })],
+    children: [run(value)],
     spacing: { after: 180 },
   });
 
 const warningParagraph = (value: string) =>
   new Paragraph({
     children: [
-      new TextRun({
-        text: `注意: ${value}`,
+      run(`注意: ${value}`, {
         bold: true,
         color: "9A3412",
       }),
@@ -51,7 +62,12 @@ const imageParagraph = (image: StoredStepImage) =>
 
 const stepChildren = (step: StoredStep, index: number) => [
   new Paragraph({
-    text: `STEP ${index + 1} ${text(step.title, "無題の手順")}`,
+    children: [
+      run(`STEP ${index + 1} ${text(step.title, "無題の手順")}`, {
+        bold: true,
+        size: 28,
+      }),
+    ],
     heading: HeadingLevel.HEADING_2,
     spacing: { before: 260, after: 140 },
   }),
@@ -79,7 +95,12 @@ export async function createWordBlob(manual: StoredManual): Promise<Blob> {
         },
         children: [
           new Paragraph({
-            text: text(manual.title, "無題のマニュアル"),
+            children: [
+              run(text(manual.title, "無題のマニュアル"), {
+                bold: true,
+                size: 36,
+              }),
+            ],
             heading: HeadingLevel.TITLE,
             spacing: { after: 240 },
           }),

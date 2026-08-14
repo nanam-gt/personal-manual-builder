@@ -5,6 +5,7 @@ import type { StoredManual, StoredStep, StoredStepImage } from "@/app/manuals/lo
 
 const SLIDE_W = 12192000;
 const SLIDE_H = 6858000;
+const OFFICE_FONT = "Meiryo";
 
 type ZipFiles = Record<string, Uint8Array>;
 
@@ -25,7 +26,11 @@ const xml = (value: string) =>
 
 const textRun = (text: string, size = 2200, bold = false) => `
   <a:r>
-    <a:rPr lang="ja-JP" sz="${size}"${bold ? ' b="1"' : ""}/>
+    <a:rPr lang="ja-JP" sz="${size}"${bold ? ' b="1"' : ""}>
+      <a:latin typeface="${OFFICE_FONT}"/>
+      <a:ea typeface="${OFFICE_FONT}"/>
+      <a:cs typeface="${OFFICE_FONT}"/>
+    </a:rPr>
     <a:t>${xml(text)}</a:t>
   </a:r>`;
 
@@ -283,7 +288,7 @@ export function createPowerPointBlob(manual: StoredManual): Blob {
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`);
   files["ppt/theme/theme1.xml"] = strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Personal Manual Builder">
-  <a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="17211F"/></a:dk2><a:lt2><a:srgbClr val="F6F7F9"/></a:lt2><a:accent1><a:srgbClr val="0F766E"/></a:accent1><a:accent2><a:srgbClr val="B42318"/></a:accent2><a:accent3><a:srgbClr val="66716F"/></a:accent3><a:accent4><a:srgbClr val="D9E0DE"/></a:accent4><a:accent5><a:srgbClr val="EEF5F4"/></a:accent5><a:accent6><a:srgbClr val="FFFFFF"/></a:accent6><a:hlink><a:srgbClr val="0F766E"/></a:hlink><a:folHlink><a:srgbClr val="0B5F59"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Arial"/></a:majorFont><a:minorFont><a:latin typeface="Arial"/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements>
+  <a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="17211F"/></a:dk2><a:lt2><a:srgbClr val="F6F7F9"/></a:lt2><a:accent1><a:srgbClr val="0F766E"/></a:accent1><a:accent2><a:srgbClr val="B42318"/></a:accent2><a:accent3><a:srgbClr val="66716F"/></a:accent3><a:accent4><a:srgbClr val="D9E0DE"/></a:accent4><a:accent5><a:srgbClr val="EEF5F4"/></a:accent5><a:accent6><a:srgbClr val="FFFFFF"/></a:accent6><a:hlink><a:srgbClr val="0F766E"/></a:hlink><a:folHlink><a:srgbClr val="0B5F59"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="${OFFICE_FONT}"/><a:ea typeface="${OFFICE_FONT}"/><a:cs typeface="${OFFICE_FONT}"/></a:majorFont><a:minorFont><a:latin typeface="${OFFICE_FONT}"/><a:ea typeface="${OFFICE_FONT}"/><a:cs typeface="${OFFICE_FONT}"/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements>
 </a:theme>`);
 
   slideFiles.forEach((slide, index) => {
