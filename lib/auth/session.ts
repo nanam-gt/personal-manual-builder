@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCloudflareEnv } from "@/lib/cloudflare";
 import { createRandomToken, hashSessionToken, verifyPassword } from "./crypto";
-import { SESSION_COOKIE } from "../auth";
+import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from "../auth";
 
 type AdminRow = {
   id: string;
@@ -11,8 +11,6 @@ type AdminRow = {
   password_hash: string;
   is_active: number;
 };
-
-const SESSION_HOURS = 8;
 
 function getSessionSecret(env: CloudflareEnv) {
   const secret = env.SESSION_SECRET;
@@ -46,7 +44,7 @@ export async function authenticateAdmin(email: string, password: string) {
   const token = createRandomToken();
   const tokenHash = await hashSessionToken(token, getSessionSecret(env));
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + SESSION_HOURS * 60 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000);
 
   await env.DB.prepare(
     `
@@ -106,10 +104,12 @@ export async function getCurrentAdmin() {
     return null;
   }
 
+  const now = new Date();
+  const nextExpiresAt = new Date(now.getTime() + SESSION_MAX_AGE_SECONDS * 1000);
   await env.DB.prepare(
-    "UPDATE admin_sessions SET last_used_at = ? WHERE id = ?"
+    "UPDATE admin_sessions SET last_used_at = ?, expires_at = ? WHERE id = ?"
   )
-    .bind(new Date().toISOString(), session.id)
+    .bind(now.toISOString(), nextExpiresAt.toISOString(), session.id)
     .run();
 
   return {
