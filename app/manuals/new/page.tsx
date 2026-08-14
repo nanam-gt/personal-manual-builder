@@ -1,5 +1,5 @@
-import ManualEditor from "../sample-editor";
+import EditorClient from "../editor-client";
 
 export default function NewManualPage() {
-  return <ManualEditor mode="new" />;
+  return <EditorClient />;
 }
