@@ -1,3 +1,5 @@
+"use client";
+
 export type StoredStepImage = {
   id: string;
   name: string;
@@ -25,9 +27,38 @@ export type StoredManual = {
   updatedAt: string;
 };
 
+const STORAGE_KEY = "personal-manual-builder.manuals";
+
 const createId = () => crypto.randomUUID();
-const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
-const SUPPORTED_IMAGE_TYPES = ["image/png", "image/jpeg"];
+
+const seedManuals = (): StoredManual[] => [
+  {
+    id: "sample",
+    title: "Airレジの商品登録方法",
+    description: "新しい商品を登録するための手順です。",
+    category: "店舗運用",
+    coverImageDataUrl: "",
+    memo: "",
+    createdAt: "2026-08-14T00:00:00.000Z",
+    updatedAt: "2026-08-14T00:00:00.000Z",
+    steps: [
+      {
+        id: createId(),
+        title: "商品一覧を開く",
+        description: "管理画面から商品設定を開きます。",
+        warning: "編集権限のあるアカウントで操作します。",
+        images: [],
+      },
+      {
+        id: createId(),
+        title: "商品情報を入力する",
+        description: "商品名、価格、カテゴリを入力します。",
+        warning: "",
+        images: [],
+      },
+    ],
+  },
+];
 
 export const createEmptyManual = (): StoredManual => {
   const timestamp = new Date().toISOString();
@@ -53,49 +84,48 @@ export const createEmptyStep = (): StoredStep => ({
   images: [],
 });
 
-async function parseJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+export function loadManuals(): StoredManual[] {
+  if (typeof window === "undefined") {
+    return [];
   }
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) {
-    throw new Error("ログイン状態を確認してください。");
+
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    const seeded = seedManuals();
+    saveManuals(seeded);
+    return seeded;
   }
-  return response.json() as Promise<T>;
-}
 
-export async function loadManuals(): Promise<StoredManual[]> {
-  const response = await fetch("/api/manuals", { cache: "no-store" });
-  const data = await parseJson<{ manuals: StoredManual[] }>(response);
-  return data.manuals;
-}
-
-export async function loadManual(manualId: string): Promise<StoredManual | null> {
-  const response = await fetch(`/api/manuals/${manualId}`, { cache: "no-store" });
-  if (response.status === 404) {
-    return null;
+  try {
+    return JSON.parse(raw) as StoredManual[];
+  } catch {
+    const seeded = seedManuals();
+    saveManuals(seeded);
+    return seeded;
   }
-  const data = await parseJson<{ manual: StoredManual }>(response);
-  return data.manual;
 }
 
-export async function upsertManual(manual: StoredManual) {
-  const response = await fetch("/api/manuals", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      ...manual,
-      updatedAt: new Date().toISOString(),
-    }),
-  });
-  const data = await parseJson<{ manual: StoredManual }>(response);
-  return data.manual;
+export function saveManuals(manuals: StoredManual[]) {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(manuals));
 }
 
-export async function duplicateManual(manualId: string) {
-  const source = await loadManual(manualId);
+export function upsertManual(manual: StoredManual) {
+  const manuals = loadManuals();
+  const index = manuals.findIndex((item) => item.id === manual.id);
+  const nextManual = { ...manual, updatedAt: new Date().toISOString() };
+
+  if (index >= 0) {
+    manuals[index] = nextManual;
+  } else {
+    manuals.unshift(nextManual);
+  }
+
+  saveManuals(manuals);
+}
+
+export function duplicateManual(manualId: string) {
+  const manuals = loadManuals();
+  const source = manuals.find((manual) => manual.id === manualId);
   if (!source) {
     return;
   }
@@ -114,23 +144,14 @@ export async function duplicateManual(manualId: string) {
     })),
   };
 
-  await upsertManual(copy);
+  saveManuals([copy, ...manuals]);
 }
 
-export async function deleteManual(manualId: string) {
-  await parseJson<{ ok: true }>(
-    await fetch(`/api/manuals/${manualId}`, { method: "DELETE" })
-  );
+export function deleteManual(manualId: string) {
+  saveManuals(loadManuals().filter((manual) => manual.id !== manualId));
 }
 
 export function readFileAsDataUrl(file: File): Promise<string> {
-  if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
-    return Promise.reject(new Error("写真はPNGまたはJPEGを選択してください。"));
-  }
-  if (file.size > MAX_IMAGE_BYTES) {
-    return Promise.reject(new Error("写真は6MB以下にしてください。"));
-  }
-
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
