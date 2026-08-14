@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertTriangle,
   Copy,
   FilePlus2,
   FileText,
@@ -26,6 +27,8 @@ export default function ManualsClient() {
   const [manuals, setManuals] = useState<StoredManual[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
+  const [manualPendingDelete, setManualPendingDelete] =
+    useState<StoredManual | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -46,11 +49,21 @@ export default function ManualsClient() {
 
   const refresh = () => setManuals(loadManuals());
 
+  const confirmDeleteManual = () => {
+    if (!manualPendingDelete) {
+      return;
+    }
+
+    deleteManual(manualPendingDelete.id);
+    setManualPendingDelete(null);
+    refresh();
+  };
+
   return (
     <>
       <header className="topbar">
         <div>
-          <p className="eyebrow">Personal Manual Builder</p>
+          <p className="eyebrow">Manual Builder</p>
           <h1>マニュアル一覧</h1>
         </div>
         <div className="topbar-actions">
@@ -170,10 +183,7 @@ export default function ManualsClient() {
                       aria-label="削除"
                       title="削除"
                       data-tooltip="削除"
-                      onClick={() => {
-                        deleteManual(manual.id);
-                        refresh();
-                      }}
+                      onClick={() => setManualPendingDelete(manual)}
                     >
                       <Trash2 size={17} />
                     </button>
@@ -184,6 +194,44 @@ export default function ManualsClient() {
           </tbody>
         </table>
       </section>
+
+      {manualPendingDelete ? (
+        <div
+          aria-labelledby="delete-dialog-title"
+          aria-modal="true"
+          className="modal-backdrop"
+          role="dialog"
+        >
+          <section className="confirm-dialog">
+            <div className="confirm-dialog-icon" aria-hidden="true">
+              <AlertTriangle size={22} />
+            </div>
+            <div className="confirm-dialog-body">
+              <p className="confirm-dialog-kicker">削除の確認</p>
+              <h2 id="delete-dialog-title">このマニュアルを削除しますか？</h2>
+              <p>
+                「{manualPendingDelete.title}」を一覧から削除します。この操作は元に戻せません。
+              </p>
+            </div>
+            <div className="confirm-dialog-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => setManualPendingDelete(null)}
+              >
+                キャンセル
+              </button>
+              <button
+                className="danger-button"
+                type="button"
+                onClick={confirmDeleteManual}
+              >
+                削除する
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </>
   );
 }
