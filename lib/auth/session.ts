@@ -12,12 +12,93 @@ type AdminRow = {
   is_active: number;
 };
 
+type SignedSessionPayload = {
+  email: string;
+  displayName: string;
+  expiresAt: string;
+};
+
+const encoder = new TextEncoder();
+
 function getSessionSecret(env: CloudflareEnv) {
   const secret = env.SESSION_SECRET;
   if (!secret && process.env.NODE_ENV === "production") {
     throw new Error("SESSION_SECRET is not configured.");
   }
   return secret || "local-development-session-secret";
+}
+
+function toBase64Url(bytes: Uint8Array) {
+  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function fromBase64Url(value: string) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
+async function signPayload(payload: string, secret: string) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+  return toBase64Url(new Uint8Array(signature));
+}
+
+function timingSafeEqual(left: string, right: string) {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  let diff = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    diff |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return diff === 0;
+}
+
+async function createSignedSessionToken(
+  payload: SignedSessionPayload,
+  secret: string
+) {
+  const body = toBase64Url(encoder.encode(JSON.stringify(payload)));
+  const signature = await signPayload(body, secret);
+  return `v2.${body}.${signature}`;
+}
+
+async function verifySignedSessionToken(token: string, secret: string) {
+  if (!token.startsWith("v2.")) {
+    return null;
+  }
+
+  const [, body, signature] = token.split(".");
+  if (!body || !signature) {
+    return null;
+  }
+
+  const expected = await signPayload(body, secret);
+  if (!timingSafeEqual(signature, expected)) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(
+      new TextDecoder().decode(fromBase64Url(body))
+    ) as SignedSessionPayload;
+    if (new Date(payload.expiresAt).getTime() <= Date.now()) {
+      return null;
+    }
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 export async function authenticateAdmin(email: string, password: string) {
@@ -69,7 +150,14 @@ export async function authenticateAdmin(email: string, password: string) {
     )
     .run();
 
-  return token;
+  return createSignedSessionToken(
+    {
+      email: admin.email,
+      displayName: admin.display_name,
+      expiresAt: expiresAt.toISOString(),
+    },
+    getSessionSecret(env)
+  );
 }
 
 export async function getCurrentAdmin() {
@@ -80,7 +168,16 @@ export async function getCurrentAdmin() {
   }
 
   const env = await getCloudflareEnv();
-  const tokenHash = await hashSessionToken(token, getSessionSecret(env));
+  const secret = getSessionSecret(env);
+  const signedSession = await verifySignedSessionToken(token, secret);
+  if (signedSession) {
+    return {
+      email: signedSession.email,
+      displayName: signedSession.displayName,
+    };
+  }
+
+  const tokenHash = await hashSessionToken(token, secret);
   const session = await env.DB.prepare(
     `
     SELECT
