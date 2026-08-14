@@ -20,6 +20,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <div className="brand-mark">
           <KeyRound aria-hidden="true" size={28} />
         </div>
+        <p className="auth-kicker">Personal Manual Builder</p>
         <h1 id="login-title">ログイン</h1>
         {error === "invalid" ? (
           <p className="form-error">メールまたはパスワードが違います。</p>

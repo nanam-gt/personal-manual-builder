@@ -83,6 +83,10 @@ label {
 }
 
 .auth-shell {
+  background:
+    linear-gradient(140deg, rgba(15, 118, 110, 0.14), transparent 42%),
+    linear-gradient(320deg, rgba(180, 35, 24, 0.08), transparent 34%),
+    var(--bg);
   display: grid;
   min-height: 100vh;
   place-items: center;
@@ -95,7 +99,7 @@ label {
   border-radius: 8px;
   box-shadow: var(--shadow);
   max-width: 420px;
-  padding: 32px;
+  padding: 34px;
   width: 100%;
 }
 
@@ -108,6 +112,13 @@ label {
   height: 48px;
   justify-content: center;
   width: 48px;
+}
+
+.auth-kicker {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  margin: 18px 0 6px;
 }
 
 .form-error {
