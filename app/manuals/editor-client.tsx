@@ -98,9 +98,9 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
           <Link href="/manuals">一覧へ戻る</Link>
           <button
             type="button"
-            onClick={() =>
+            onClick={async () =>
               downloadBlob(
-                createPowerPointBlob(manual),
+                await createPowerPointBlob(manual),
                 createOfficeFileName(manual.title, "pptx")
               )
             }

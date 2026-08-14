@@ -130,9 +130,9 @@ export default function ManualsClient() {
                     <button
                       type="button"
                       aria-label="PowerPoint"
-                      onClick={() =>
+                      onClick={async () =>
                         downloadBlob(
-                          createPowerPointBlob(manual),
+                          await createPowerPointBlob(manual),
                           createOfficeFileName(manual.title, "pptx")
                         )
                       }
