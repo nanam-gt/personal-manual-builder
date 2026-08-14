@@ -129,6 +129,18 @@ label {
   justify-content: space-between;
 }
 
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.topbar-actions > a:first-child,
+.editor-header > a {
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .eyebrow {
   color: var(--accent);
   font-size: 12px;
@@ -340,6 +352,11 @@ td span {
 
   .topbar,
   .editor-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .topbar-actions {
     align-items: stretch;
     flex-direction: column;
   }

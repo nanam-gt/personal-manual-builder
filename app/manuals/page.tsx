@@ -29,10 +29,13 @@ export default function ManualsPage() {
           <p className="eyebrow">Personal Manual Builder</p>
           <h1>マニュアル一覧</h1>
         </div>
-        <Link className="primary-action" href="/manuals/new">
-          <FilePlus2 aria-hidden="true" size={18} />
-          新規作成
-        </Link>
+        <div className="topbar-actions">
+          <Link href="/logout">ログアウト</Link>
+          <Link className="primary-action" href="/manuals/new">
+            <FilePlus2 aria-hidden="true" size={18} />
+            新規作成
+          </Link>
+        </div>
       </header>
 
       <section className="toolbar" aria-label="検索と絞り込み">
