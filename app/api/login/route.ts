@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
+import {
+  LEGACY_SESSION_COOKIE,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from "@/lib/auth";
 import { authenticateAdmin } from "@/lib/auth/session";
 
 export async function POST(request: Request) {
@@ -13,6 +17,7 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.redirect(new URL("/manuals", request.url));
+  response.cookies.delete(LEGACY_SESSION_COOKIE);
   response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
   return response;
 }

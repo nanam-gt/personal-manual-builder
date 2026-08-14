@@ -1,4 +1,5 @@
-export const SESSION_COOKIE = "pmb_session";
+export const LEGACY_SESSION_COOKIE = "pmb_session";
+export const SESSION_COOKIE = "pmb_session_v2";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
 
 export const sessionCookieOptions = {

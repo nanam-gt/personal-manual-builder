@@ -124,28 +124,31 @@ function addBodyText(
 }
 
 function addDescriptionPanel(slide: pptxgen.Slide, text: string) {
-  slide.addText("説明", {
-    ...textStyle,
+  slide.addShape(pptxgen.ShapeType.rect, {
     x: 8.72,
     y: 1.72,
     w: 3.65,
     h: 2.35,
+    fill: { color: COLORS.descriptionBg },
+    line: { color: COLORS.descriptionBorder, width: 1.1 },
+  });
+  slide.addText("説明", {
+    ...textStyle,
+    x: 9.02,
+    y: 1.98,
+    w: 3.1,
+    h: 0.28,
     fontSize: 11,
     bold: true,
     color: COLORS.accentDark,
-    margin: [0.16, 0.18, 0.16, 0.18],
-    valign: "top",
-    breakLine: false,
-    fill: { color: COLORS.descriptionBg },
-    line: { color: COLORS.descriptionBorder, width: 1.1 },
-    fit: "shrink",
+    margin: 0,
   });
   slide.addText(text || "説明は未入力です。", {
     ...textStyle,
-    x: 8.92,
-    y: 2.16,
-    w: 3.25,
-    h: 1.55,
+    x: 9.02,
+    y: 2.38,
+    w: 3.08,
+    h: 1.38,
     fontSize: 12,
     color: COLORS.text,
     margin: 0,
@@ -156,20 +159,37 @@ function addDescriptionPanel(slide: pptxgen.Slide, text: string) {
 }
 
 function addWarningPanel(slide: pptxgen.Slide, warning: string) {
-  slide.addText([{ text: "注意\n", options: { bold: true } }, { text: warning }], {
-    ...textStyle,
+  slide.addShape(pptxgen.ShapeType.rect, {
     x: 8.72,
     y: 4.3,
     w: 3.65,
     h: 1.55,
+    fill: { color: COLORS.warningBg },
+    line: { color: COLORS.warningBorder, width: 1 },
+  });
+  slide.addText("注意", {
+    ...textStyle,
+    x: 9.02,
+    y: 4.55,
+    w: 3.1,
+    h: 0.28,
     fontSize: 11.5,
     bold: true,
     color: COLORS.warning,
-    margin: [0.18, 0.2, 0.16, 0.2],
+    margin: 0,
+  });
+  slide.addText(warning, {
+    ...textStyle,
+    x: 9.02,
+    y: 4.94,
+    w: 3.08,
+    h: 0.68,
+    fontSize: 11.5,
+    bold: true,
+    color: COLORS.warning,
+    margin: 0,
     valign: "top",
     breakLine: false,
-    fill: { color: COLORS.warningBg },
-    line: { color: COLORS.warningBorder, width: 1 },
     fit: "shrink",
   });
 }

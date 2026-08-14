@@ -2,7 +2,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCloudflareEnv } from "@/lib/cloudflare";
 import { createRandomToken, hashSessionToken, verifyPassword } from "./crypto";
-import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from "../auth";
+import {
+  LEGACY_SESSION_COOKIE,
+  SESSION_COOKIE,
+  SESSION_MAX_AGE_SECONDS,
+} from "../auth";
 
 type AdminRow = {
   id: string;
@@ -197,7 +201,6 @@ export async function getCurrentAdmin() {
     .first<{ id: string; email: string; display_name: string }>();
 
   if (!session) {
-    cookieStore.delete(SESSION_COOKIE);
     return null;
   }
 
@@ -228,6 +231,7 @@ export async function revokeCurrentSession() {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) {
     cookieStore.delete(SESSION_COOKIE);
+    cookieStore.delete(LEGACY_SESSION_COOKIE);
     return;
   }
 
@@ -239,4 +243,5 @@ export async function revokeCurrentSession() {
     .bind(new Date().toISOString(), tokenHash)
     .run();
   cookieStore.delete(SESSION_COOKIE);
+  cookieStore.delete(LEGACY_SESSION_COOKIE);
 }
