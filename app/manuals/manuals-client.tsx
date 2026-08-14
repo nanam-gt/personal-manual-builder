@@ -11,6 +11,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { downloadBlob } from "@/lib/export/download";
+import { createOfficeFileName } from "@/lib/export/file-name";
+import { createPowerPointBlob } from "@/lib/export/pptx";
 import {
   deleteManual,
   duplicateManual,
@@ -123,7 +126,16 @@ export default function ManualsClient() {
                     >
                       <Copy size={17} />
                     </button>
-                    <button type="button" aria-label="PowerPoint" disabled>
+                    <button
+                      type="button"
+                      aria-label="PowerPoint"
+                      onClick={() =>
+                        downloadBlob(
+                          createPowerPointBlob(manual),
+                          createOfficeFileName(manual.title, "pptx")
+                        )
+                      }
+                    >
                       <Download size={17} />
                     </button>
                     <button type="button" aria-label="Word" disabled>

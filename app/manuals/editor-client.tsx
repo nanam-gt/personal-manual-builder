@@ -5,6 +5,7 @@ import {
   ArrowUp,
   Copy,
   FileImage,
+  Download,
   Plus,
   Save,
   Trash2,
@@ -12,6 +13,9 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { downloadBlob } from "@/lib/export/download";
+import { createOfficeFileName } from "@/lib/export/file-name";
+import { createPowerPointBlob } from "@/lib/export/pptx";
 import {
   createEmptyManual,
   createEmptyStep,
@@ -90,6 +94,18 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
         </div>
         <div className="topbar-actions">
           <Link href="/manuals">一覧へ戻る</Link>
+          <button
+            type="button"
+            onClick={() =>
+              downloadBlob(
+                createPowerPointBlob(manual),
+                createOfficeFileName(manual.title, "pptx")
+              )
+            }
+          >
+            <Download aria-hidden="true" size={17} />
+            PowerPoint
+          </button>
           <button type="button" onClick={save}>
             <Save aria-hidden="true" size={17} />
             保存
