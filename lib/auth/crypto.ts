@@ -1,6 +1,5 @@
 const encoder = new TextEncoder();
-const ITERATIONS = 210_000;
-const KEY_LENGTH = 32;
+const ITERATIONS = 8_000;
 
 function toBase64Url(bytes: Uint8Array) {
   const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
@@ -14,6 +13,13 @@ function fromBase64Url(value: string) {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+function toArrayBuffer(bytes: Uint8Array) {
+  return bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength
+  ) as ArrayBuffer;
+}
+
 export function createRandomToken(byteLength = 32) {
   const bytes = new Uint8Array(byteLength);
   crypto.getRandomValues(bytes);
@@ -23,56 +29,24 @@ export function createRandomToken(byteLength = 32) {
 export async function hashPassword(password: string) {
   const salt = new Uint8Array(16);
   crypto.getRandomValues(salt);
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt,
-      iterations: ITERATIONS,
-      hash: "SHA-256",
-    },
-    key,
-    KEY_LENGTH * 8
-  );
+  const hash = await derivePortableHash(password, salt, ITERATIONS);
 
-  return `pbkdf2-sha256$${ITERATIONS}$${toBase64Url(salt)}$${toBase64Url(
-    new Uint8Array(bits)
-  )}`;
+  return `sha256-v1$${ITERATIONS}$${toBase64Url(salt)}$${toBase64Url(hash)}`;
 }
 
 export async function verifyPassword(password: string, passwordHash: string) {
   const [algorithm, iterationsText, saltText, hashText] = passwordHash.split("$");
-  if (algorithm !== "pbkdf2-sha256") {
+  if (algorithm !== "sha256-v1" && algorithm !== "pbkdf2-sha256") {
     return false;
   }
 
   const iterations = Number(iterationsText);
   const salt = fromBase64Url(saltText);
   const expected = fromBase64Url(hashText);
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt,
-      iterations,
-      hash: "SHA-256",
-    },
-    key,
-    expected.length * 8
-  );
-  const actual = new Uint8Array(bits);
+  const actual =
+    algorithm === "sha256-v1"
+      ? await derivePortableHash(password, salt, iterations)
+      : await derivePbkdf2Hash(password, salt, iterations, expected.length);
 
   if (actual.length !== expected.length) {
     return false;
@@ -84,6 +58,51 @@ export async function verifyPassword(password: string, passwordHash: string) {
   }
 
   return diff === 0;
+}
+
+async function derivePortableHash(
+  password: string,
+  salt: Uint8Array,
+  iterations: number
+) {
+  let hash = new Uint8Array([
+    ...salt,
+    ...encoder.encode(password),
+  ]);
+
+  for (let index = 0; index < iterations; index += 1) {
+    hash = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", toArrayBuffer(hash))
+    );
+  }
+
+  return hash;
+}
+
+async function derivePbkdf2Hash(
+  password: string,
+  salt: Uint8Array,
+  iterations: number,
+  byteLength: number
+) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: toArrayBuffer(salt),
+      iterations,
+      hash: "SHA-256",
+    },
+    key,
+    byteLength * 8
+  );
+  return new Uint8Array(bits);
 }
 
 export async function hashSessionToken(token: string, secret: string) {

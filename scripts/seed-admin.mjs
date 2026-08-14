@@ -1,8 +1,7 @@
 import { randomBytes, randomUUID, webcrypto } from "node:crypto";
 import { spawnSync } from "node:child_process";
 
-const ITERATIONS = 210_000;
-const KEY_LENGTH = 32;
+const ITERATIONS = 8_000;
 
 function parseArgs() {
   const args = new Map();
@@ -28,27 +27,16 @@ function toBase64Url(bytes) {
 
 async function hashPassword(password) {
   const salt = randomBytes(16);
-  const key = await webcrypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const bits = await webcrypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt,
-      iterations: ITERATIONS,
-      hash: "SHA-256",
-    },
-    key,
-    KEY_LENGTH * 8
-  );
+  let hash = new Uint8Array([
+    ...salt,
+    ...new TextEncoder().encode(password),
+  ]);
 
-  return `pbkdf2-sha256$${ITERATIONS}$${toBase64Url(salt)}$${toBase64Url(
-    new Uint8Array(bits)
-  )}`;
+  for (let index = 0; index < ITERATIONS; index += 1) {
+    hash = new Uint8Array(await webcrypto.subtle.digest("SHA-256", hash));
+  }
+
+  return `sha256-v1$${ITERATIONS}$${toBase64Url(salt)}$${toBase64Url(hash)}`;
 }
 
 function sqlString(value) {
