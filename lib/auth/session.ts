@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCloudflareEnv } from "@/lib/cloudflare";
 import { createRandomToken, hashSessionToken, verifyPassword } from "./crypto";
-import { SESSION_COOKIE, sessionCookieOptions } from "../auth";
+import { SESSION_COOKIE } from "../auth";
 
 type AdminRow = {
   id: string;
@@ -35,12 +35,12 @@ export async function authenticateAdmin(email: string, password: string) {
     .first<AdminRow>();
 
   if (!admin) {
-    return false;
+    return null;
   }
 
   const isValid = await verifyPassword(password, admin.password_hash);
   if (!isValid) {
-    return false;
+    return null;
   }
 
   const token = createRandomToken();
@@ -71,9 +71,7 @@ export async function authenticateAdmin(email: string, password: string) {
     )
     .run();
 
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, sessionCookieOptions);
-  return true;
+  return token;
 }
 
 export async function getCurrentAdmin() {

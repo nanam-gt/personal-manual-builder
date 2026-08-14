@@ -1,7 +1,6 @@
 import { KeyRound } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getCurrentAdmin } from "@/lib/auth/session";
-import { login } from "./actions";
 
 type LoginPageProps = {
   searchParams: Promise<{ error?: string }>;
@@ -25,7 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         {error === "invalid" ? (
           <p className="form-error">メールまたはパスワードが違います。</p>
         ) : null}
-        <form className="stack" action={login}>
+        <form className="stack" action="/api/login" method="post">
           <label>
             メール
             <input type="email" name="email" autoComplete="email" required />
