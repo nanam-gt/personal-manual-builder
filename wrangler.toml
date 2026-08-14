@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "personal-manual-builder-db"
-database_id = "replace-with-new-d1-database-id"
+database_id = "ff88df07-1669-4e98-9004-546911441b7b"
 
 [[r2_buckets]]
 binding = "MANUAL_IMAGES"
