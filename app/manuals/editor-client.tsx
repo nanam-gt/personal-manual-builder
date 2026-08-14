@@ -5,9 +5,9 @@ import {
   ArrowUp,
   Copy,
   FileImage,
-  Download,
   FileText,
   Plus,
+  Presentation,
   Save,
   Trash2,
 } from "lucide-react";
@@ -98,6 +98,7 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
           <Link href="/manuals">一覧へ戻る</Link>
           <button
             type="button"
+            title="PowerPointをダウンロード"
             onClick={async () =>
               downloadBlob(
                 await createPowerPointBlob(manual),
@@ -105,7 +106,10 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
               )
             }
           >
-            <Download aria-hidden="true" size={17} />
+            <span className="ppt-icon" aria-hidden="true">
+              <Presentation size={17} />
+              <span>PPT</span>
+            </span>
             PowerPoint
           </button>
           <button

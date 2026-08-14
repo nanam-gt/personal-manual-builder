@@ -2,10 +2,10 @@
 
 import {
   Copy,
-  Download,
   FilePlus2,
   FileText,
   Pencil,
+  Presentation,
   Search,
   Trash2,
 } from "lucide-react";
@@ -114,12 +114,19 @@ export default function ManualsClient() {
                 <td>{new Date(manual.updatedAt).toLocaleDateString("ja-JP")}</td>
                 <td>
                   <div className="icon-actions">
-                    <Link href={`/manuals/${manual.id}/edit`} aria-label="編集">
+                    <Link
+                      href={`/manuals/${manual.id}/edit`}
+                      aria-label="編集"
+                      title="編集"
+                      data-tooltip="編集"
+                    >
                       <Pencil size={17} />
                     </Link>
                     <button
                       type="button"
                       aria-label="複製"
+                      title="複製"
+                      data-tooltip="複製"
                       onClick={() => {
                         duplicateManual(manual.id);
                         refresh();
@@ -129,7 +136,9 @@ export default function ManualsClient() {
                     </button>
                     <button
                       type="button"
-                      aria-label="PowerPoint"
+                      aria-label="PowerPointをダウンロード"
+                      title="PowerPointをダウンロード"
+                      data-tooltip="PowerPointをダウンロード"
                       onClick={async () =>
                         downloadBlob(
                           await createPowerPointBlob(manual),
@@ -137,11 +146,16 @@ export default function ManualsClient() {
                         )
                       }
                     >
-                      <Download size={17} />
+                      <span className="ppt-icon" aria-hidden="true">
+                        <Presentation size={17} />
+                        <span>PPT</span>
+                      </span>
                     </button>
                     <button
                       type="button"
-                      aria-label="Word"
+                      aria-label="Wordをダウンロード"
+                      title="Wordをダウンロード"
+                      data-tooltip="Wordをダウンロード"
                       onClick={async () =>
                         downloadBlob(
                           await createWordBlob(manual),
@@ -154,6 +168,8 @@ export default function ManualsClient() {
                     <button
                       type="button"
                       aria-label="削除"
+                      title="削除"
+                      data-tooltip="削除"
                       onClick={() => {
                         deleteManual(manual.id);
                         refresh();

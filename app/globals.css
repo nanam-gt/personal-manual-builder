@@ -263,6 +263,7 @@ td span {
 .icon-actions {
   display: flex;
   gap: 7px;
+  overflow: visible;
 }
 
 .icon-actions a,
@@ -276,12 +277,78 @@ td span {
   height: 34px;
   justify-content: center;
   padding: 0;
+  position: relative;
   width: 34px;
 }
 
 .icon-actions a:hover,
 .icon-actions button:hover {
   background: var(--panel-strong);
+}
+
+.icon-actions [data-tooltip]::after {
+  background: var(--text);
+  border-radius: 6px;
+  bottom: calc(100% + 8px);
+  color: #fff;
+  content: attr(data-tooltip);
+  font-size: 12px;
+  font-weight: 600;
+  left: 50%;
+  line-height: 1.35;
+  opacity: 0;
+  padding: 7px 9px;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%) translateY(4px);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  white-space: nowrap;
+  z-index: 20;
+}
+
+.icon-actions [data-tooltip]::before {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--text);
+  bottom: calc(100% + 3px);
+  content: "";
+  left: 50%;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%) translateY(4px);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  z-index: 20;
+}
+
+.icon-actions [data-tooltip]:hover::after,
+.icon-actions [data-tooltip]:hover::before,
+.icon-actions [data-tooltip]:focus-visible::after,
+.icon-actions [data-tooltip]:focus-visible::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.ppt-icon {
+  align-items: center;
+  display: inline-flex;
+  height: 20px;
+  justify-content: center;
+  position: relative;
+  width: 22px;
+}
+
+.ppt-icon > span {
+  background: #c43e1c;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 2px 3px;
+  position: absolute;
+  right: -5px;
+  top: 11px;
 }
 
 .editor-grid {
