@@ -51,14 +51,13 @@ const toDataUrl = async (bucket: R2Bucket, key: string, mimeType: string) => {
 };
 
 const parseDataUrl = (dataUrl: string) => {
-  const match = dataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,(.+)$/);
+  const match = dataUrl.match(/^data:(image\/(?:png|jpeg));base64,(.+)$/);
   if (!match) {
     return null;
   }
 
   const mimeType = match[1];
-  const extension =
-    mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
+  const extension = mimeType === "image/png" ? "png" : "jpg";
   const binary = atob(match[2]);
   const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
 

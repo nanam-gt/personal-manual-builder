@@ -50,19 +50,31 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
   const [previewMode, setPreviewMode] = useState<"ppt" | "word">("ppt");
   const [previewStepIndex, setPreviewStepIndex] = useState(0);
   const [mobilePane, setMobilePane] = useState<"edit" | "preview">("edit");
+  const [isLoading, setIsLoading] = useState(Boolean(manualId));
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!manualId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setManual(createEmptyManual());
+      setIsLoading(false);
       return;
     }
 
-    void loadManual(manualId).then((found) => {
-      if (found) {
-        setManual(found);
-      }
-    });
+    setIsLoading(true);
+    void loadManual(manualId)
+      .then((found) => {
+        if (found) {
+          setManual(found);
+        } else {
+          setError("マニュアルが見つかりません。");
+        }
+      })
+      .catch((caught) =>
+        setError(caught instanceof Error ? caught.message : "読み込みに失敗しました。")
+      )
+      .finally(() => setIsLoading(false));
   }, [manualId]);
 
   const selectedStep = useMemo(
@@ -84,8 +96,25 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
   };
 
   const save = async () => {
-    await upsertManual(manual);
-    router.push("/manuals");
+    if (!manual.title.trim()) {
+      setError("タイトルを入力してください。");
+      return;
+    }
+    if (manual.steps.some((step) => !step.title.trim())) {
+      setError("すべての手順にタイトルを入力してください。");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+    try {
+      await upsertManual(manual);
+      router.push("/manuals");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "保存に失敗しました。");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -99,6 +128,7 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
           <Link href="/manuals">一覧へ戻る</Link>
           <button
             type="button"
+            disabled={isSaving}
             onClick={() =>
               downloadBlob(
                 createPowerPointBlob(manual),
@@ -111,6 +141,7 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
           </button>
           <button
             type="button"
+            disabled={isSaving}
             onClick={async () =>
               downloadBlob(
                 await createWordBlob(manual),
@@ -121,12 +152,15 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
             <FileText aria-hidden="true" size={17} />
             Word
           </button>
-          <button type="button" onClick={save}>
+          <button type="button" onClick={save} disabled={isSaving}>
             <Save aria-hidden="true" size={17} />
-            保存
+            {isSaving ? "保存中" : "保存"}
           </button>
         </div>
       </header>
+
+      {error ? <p className="form-error">{error}</p> : null}
+      {isLoading ? <p className="status-line">読み込み中です。</p> : null}
 
       <div className="mobile-tabs" aria-label="表示切替">
         <button type="button" onClick={() => setMobilePane("edit")}>
@@ -292,27 +326,38 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
                       <span>写真{slot}</span>
                       <input
                         type="file"
-                        accept="image/png,image/jpeg,image/webp"
+                        accept="image/png,image/jpeg"
                         onChange={async (event) => {
                           const file = event.target.files?.[0];
                           if (!file) {
                             return;
                           }
 
-                          const dataUrl = await readFileAsDataUrl(file);
-                          updateStep(step.id, {
-                            images: [
-                              ...step.images.filter(
-                                (item) => item.displayOrder !== slot
-                              ),
-                              {
-                                id: image?.id ?? crypto.randomUUID(),
-                                name: file.name,
-                                dataUrl,
-                                displayOrder: slot as 1 | 2,
-                              },
-                            ].sort((a, b) => a.displayOrder - b.displayOrder),
-                          });
+                          try {
+                            const dataUrl = await readFileAsDataUrl(file);
+                            setError("");
+                            updateStep(step.id, {
+                              images: [
+                                ...step.images.filter(
+                                  (item) => item.displayOrder !== slot
+                                ),
+                                {
+                                  id: image?.id ?? crypto.randomUUID(),
+                                  name: file.name,
+                                  dataUrl,
+                                  displayOrder: slot as 1 | 2,
+                                },
+                              ].sort((a, b) => a.displayOrder - b.displayOrder),
+                            });
+                          } catch (caught) {
+                            setError(
+                              caught instanceof Error
+                                ? caught.message
+                                : "写真の読み込みに失敗しました。"
+                            );
+                          } finally {
+                            event.currentTarget.value = "";
+                          }
                         }}
                       />
                       {image ? (

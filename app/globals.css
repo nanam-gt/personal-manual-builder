@@ -120,6 +120,12 @@ label {
   padding: 10px 12px;
 }
 
+.status-line {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 14px 0 0;
+}
+
 .stack,
 .form-section,
 .edit-pane {

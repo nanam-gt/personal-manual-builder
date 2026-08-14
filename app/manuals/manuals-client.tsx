@@ -26,9 +26,19 @@ export default function ManualsClient() {
   const [manuals, setManuals] = useState<StoredManual[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [pendingActionId, setPendingActionId] = useState("");
 
   async function refresh() {
-    setManuals(await loadManuals());
+    setError("");
+    try {
+      setManuals(await loadManuals());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "読み込みに失敗しました。");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -86,6 +96,8 @@ export default function ManualsClient() {
         </select>
       </section>
 
+      {error ? <p className="form-error">{error}</p> : null}
+
       <section className="table-wrap" aria-label="マニュアル">
         <table>
           <thead>
@@ -99,6 +111,20 @@ export default function ManualsClient() {
             </tr>
           </thead>
           <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6}>
+                  <span>読み込み中です。</span>
+                </td>
+              </tr>
+            ) : null}
+            {!isLoading && filteredManuals.length === 0 ? (
+              <tr>
+                <td colSpan={6}>
+                  <span>マニュアルはまだありません。</span>
+                </td>
+              </tr>
+            ) : null}
             {filteredManuals.map((manual) => (
               <tr key={manual.id}>
                 <td>
@@ -122,9 +148,21 @@ export default function ManualsClient() {
                     <button
                       type="button"
                       aria-label="複製"
+                      disabled={pendingActionId === manual.id}
                       onClick={async () => {
-                        await duplicateManual(manual.id);
-                        await refresh();
+                        setPendingActionId(manual.id);
+                        try {
+                          await duplicateManual(manual.id);
+                          await refresh();
+                        } catch (caught) {
+                          setError(
+                            caught instanceof Error
+                              ? caught.message
+                              : "複製に失敗しました。"
+                          );
+                        } finally {
+                          setPendingActionId("");
+                        }
                       }}
                     >
                       <Copy size={17} />
@@ -132,6 +170,7 @@ export default function ManualsClient() {
                     <button
                       type="button"
                       aria-label="PowerPoint"
+                      disabled={pendingActionId === manual.id}
                       onClick={() =>
                         downloadBlob(
                           createPowerPointBlob(manual),
@@ -144,6 +183,7 @@ export default function ManualsClient() {
                     <button
                       type="button"
                       aria-label="Word"
+                      disabled={pendingActionId === manual.id}
                       onClick={async () =>
                         downloadBlob(
                           await createWordBlob(manual),
@@ -156,9 +196,24 @@ export default function ManualsClient() {
                     <button
                       type="button"
                       aria-label="削除"
+                      disabled={pendingActionId === manual.id}
                       onClick={async () => {
-                        await deleteManual(manual.id);
-                        await refresh();
+                        if (!window.confirm("このマニュアルを削除しますか？")) {
+                          return;
+                        }
+                        setPendingActionId(manual.id);
+                        try {
+                          await deleteManual(manual.id);
+                          await refresh();
+                        } catch (caught) {
+                          setError(
+                            caught instanceof Error
+                              ? caught.message
+                              : "削除に失敗しました。"
+                          );
+                        } finally {
+                          setPendingActionId("");
+                        }
                       }}
                     >
                       <Trash2 size={17} />
