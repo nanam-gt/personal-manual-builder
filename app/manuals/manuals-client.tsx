@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { downloadBlob } from "@/lib/export/download";
+import { createWordBlob } from "@/lib/export/docx";
 import { createOfficeFileName } from "@/lib/export/file-name";
 import { createPowerPointBlob } from "@/lib/export/pptx";
 import {
@@ -138,7 +139,16 @@ export default function ManualsClient() {
                     >
                       <Download size={17} />
                     </button>
-                    <button type="button" aria-label="Word" disabled>
+                    <button
+                      type="button"
+                      aria-label="Word"
+                      onClick={async () =>
+                        downloadBlob(
+                          await createWordBlob(manual),
+                          createOfficeFileName(manual.title, "docx")
+                        )
+                      }
+                    >
                       <FileText size={17} />
                     </button>
                     <button

@@ -6,6 +6,7 @@ import {
   Copy,
   FileImage,
   Download,
+  FileText,
   Plus,
   Save,
   Trash2,
@@ -14,6 +15,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { downloadBlob } from "@/lib/export/download";
+import { createWordBlob } from "@/lib/export/docx";
 import { createOfficeFileName } from "@/lib/export/file-name";
 import { createPowerPointBlob } from "@/lib/export/pptx";
 import {
@@ -105,6 +107,18 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
           >
             <Download aria-hidden="true" size={17} />
             PowerPoint
+          </button>
+          <button
+            type="button"
+            onClick={async () =>
+              downloadBlob(
+                await createWordBlob(manual),
+                createOfficeFileName(manual.title, "docx")
+              )
+            }
+          >
+            <FileText aria-hidden="true" size={17} />
+            Word
           </button>
           <button type="button" onClick={save}>
             <Save aria-hidden="true" size={17} />
