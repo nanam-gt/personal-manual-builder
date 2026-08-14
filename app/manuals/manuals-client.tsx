@@ -27,9 +27,13 @@ export default function ManualsClient() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
 
+  async function refresh() {
+    setManuals(await loadManuals());
+  }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setManuals(loadManuals());
+    void refresh();
   }, []);
 
   const categories = useMemo(
@@ -43,8 +47,6 @@ export default function ManualsClient() {
     const matchesCategory = !category || manual.category === category;
     return matchesQuery && matchesCategory;
   });
-
-  const refresh = () => setManuals(loadManuals());
 
   return (
     <>
@@ -120,9 +122,9 @@ export default function ManualsClient() {
                     <button
                       type="button"
                       aria-label="複製"
-                      onClick={() => {
-                        duplicateManual(manual.id);
-                        refresh();
+                      onClick={async () => {
+                        await duplicateManual(manual.id);
+                        await refresh();
                       }}
                     >
                       <Copy size={17} />
@@ -154,9 +156,9 @@ export default function ManualsClient() {
                     <button
                       type="button"
                       aria-label="削除"
-                      onClick={() => {
-                        deleteManual(manual.id);
-                        refresh();
+                      onClick={async () => {
+                        await deleteManual(manual.id);
+                        await refresh();
                       }}
                     >
                       <Trash2 size={17} />

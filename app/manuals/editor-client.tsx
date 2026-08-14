@@ -21,7 +21,7 @@ import { createPowerPointBlob } from "@/lib/export/pptx";
 import {
   createEmptyManual,
   createEmptyStep,
-  loadManuals,
+  loadManual,
   readFileAsDataUrl,
   upsertManual,
   type StoredManual,
@@ -58,10 +58,11 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
       return;
     }
 
-    const found = loadManuals().find((item) => item.id === manualId);
-    if (found) {
-      setManual(found);
-    }
+    void loadManual(manualId).then((found) => {
+      if (found) {
+        setManual(found);
+      }
+    });
   }, [manualId]);
 
   const selectedStep = useMemo(
@@ -82,8 +83,8 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
     }));
   };
 
-  const save = () => {
-    upsertManual(manual);
+  const save = async () => {
+    await upsertManual(manual);
     router.push("/manuals");
   };
 

@@ -1,5 +1,3 @@
-"use client";
-
 export type StoredStepImage = {
   id: string;
   name: string;
@@ -27,38 +25,7 @@ export type StoredManual = {
   updatedAt: string;
 };
 
-const STORAGE_KEY = "personal-manual-builder.manuals";
-
 const createId = () => crypto.randomUUID();
-
-const seedManuals = (): StoredManual[] => [
-  {
-    id: "sample",
-    title: "Airレジの商品登録方法",
-    description: "新しい商品を登録するための手順です。",
-    category: "店舗運用",
-    coverImageDataUrl: "",
-    memo: "",
-    createdAt: "2026-08-14T00:00:00.000Z",
-    updatedAt: "2026-08-14T00:00:00.000Z",
-    steps: [
-      {
-        id: createId(),
-        title: "商品一覧を開く",
-        description: "管理画面から商品設定を開きます。",
-        warning: "編集権限のあるアカウントで操作します。",
-        images: [],
-      },
-      {
-        id: createId(),
-        title: "商品情報を入力する",
-        description: "商品名、価格、カテゴリを入力します。",
-        warning: "",
-        images: [],
-      },
-    ],
-  },
-];
 
 export const createEmptyManual = (): StoredManual => {
   const timestamp = new Date().toISOString();
@@ -84,48 +51,45 @@ export const createEmptyStep = (): StoredStep => ({
   images: [],
 });
 
-export function loadManuals(): StoredManual[] {
-  if (typeof window === "undefined") {
-    return [];
+async function parseJson<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
   }
-
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    const seeded = seedManuals();
-    saveManuals(seeded);
-    return seeded;
-  }
-
-  try {
-    return JSON.parse(raw) as StoredManual[];
-  } catch {
-    const seeded = seedManuals();
-    saveManuals(seeded);
-    return seeded;
-  }
+  return response.json() as Promise<T>;
 }
 
-export function saveManuals(manuals: StoredManual[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(manuals));
+export async function loadManuals(): Promise<StoredManual[]> {
+  const response = await fetch("/api/manuals", { cache: "no-store" });
+  const data = await parseJson<{ manuals: StoredManual[] }>(response);
+  return data.manuals;
 }
 
-export function upsertManual(manual: StoredManual) {
-  const manuals = loadManuals();
-  const index = manuals.findIndex((item) => item.id === manual.id);
-  const nextManual = { ...manual, updatedAt: new Date().toISOString() };
-
-  if (index >= 0) {
-    manuals[index] = nextManual;
-  } else {
-    manuals.unshift(nextManual);
+export async function loadManual(manualId: string): Promise<StoredManual | null> {
+  const response = await fetch(`/api/manuals/${manualId}`, { cache: "no-store" });
+  if (response.status === 404) {
+    return null;
   }
-
-  saveManuals(manuals);
+  const data = await parseJson<{ manual: StoredManual }>(response);
+  return data.manual;
 }
 
-export function duplicateManual(manualId: string) {
-  const manuals = loadManuals();
-  const source = manuals.find((manual) => manual.id === manualId);
+export async function upsertManual(manual: StoredManual) {
+  const response = await fetch("/api/manuals", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      ...manual,
+      updatedAt: new Date().toISOString(),
+    }),
+  });
+  const data = await parseJson<{ manual: StoredManual }>(response);
+  return data.manual;
+}
+
+export async function duplicateManual(manualId: string) {
+  const source = await loadManual(manualId);
   if (!source) {
     return;
   }
@@ -144,11 +108,13 @@ export function duplicateManual(manualId: string) {
     })),
   };
 
-  saveManuals([copy, ...manuals]);
+  await upsertManual(copy);
 }
 
-export function deleteManual(manualId: string) {
-  saveManuals(loadManuals().filter((manual) => manual.id !== manualId));
+export async function deleteManual(manualId: string) {
+  await parseJson<{ ok: true }>(
+    await fetch(`/api/manuals/${manualId}`, { method: "DELETE" })
+  );
 }
 
 export function readFileAsDataUrl(file: File): Promise<string> {
