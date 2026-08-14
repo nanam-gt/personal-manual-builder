@@ -20,6 +20,7 @@ import {
   upsertManual,
   type StoredManual,
   type StoredStep,
+  type StoredStepImage,
 } from "./local-store";
 
 type ManualEditorProps = {
@@ -41,6 +42,7 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
   const router = useRouter();
   const [manual, setManual] = useState<StoredManual>(() => createEmptyManual());
   const [previewMode, setPreviewMode] = useState<"ppt" | "word">("ppt");
+  const [previewStepIndex, setPreviewStepIndex] = useState(0);
   const [mobilePane, setMobilePane] = useState<"edit" | "preview">("edit");
 
   useEffect(() => {
@@ -56,7 +58,10 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
     }
   }, [manualId]);
 
-  const selectedStep = useMemo(() => manual.steps[0], [manual.steps]);
+  const selectedStep = useMemo(
+    () => manual.steps[previewStepIndex - 1],
+    [manual.steps, previewStepIndex]
+  );
 
   const updateManual = (patch: Partial<StoredManual>) => {
     setManual((current) => ({ ...current, ...patch }));
@@ -314,44 +319,123 @@ export default function EditorClient({ manualId }: ManualEditorProps) {
             </button>
           </div>
           {previewMode === "ppt" ? (
-            <div className="slide-preview">
-              <p>STEP 1</p>
-              <h2>{selectedStep?.title || manual.title}</h2>
-              <div className="preview-image-grid">
-                {(selectedStep?.images.length ? selectedStep.images : [null]).map(
-                  (image, index) =>
-                    image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={image.dataUrl} alt={image.name} key={image.id} />
-                    ) : (
-                      <div className="preview-image" key={index}>
-                        写真なし
-                      </div>
-                    )
-                )}
-              </div>
-              <p>{selectedStep?.description || manual.description}</p>
-              {selectedStep?.warning ? <strong>{selectedStep.warning}</strong> : null}
-            </div>
+            <PowerPointPreview
+              manual={manual}
+              previewStepIndex={previewStepIndex}
+              selectedStep={selectedStep}
+              onSelectStep={setPreviewStepIndex}
+            />
           ) : (
-            <div className="word-preview">
-              <h2>{manual.title}</h2>
-              <p>{manual.description}</p>
-              {manual.steps.map((step, index) => (
-                <section key={step.id}>
-                  <h3>STEP {index + 1} {step.title}</h3>
-                  <p>{step.description}</p>
-                  {step.images.map((image) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={image.dataUrl} alt={image.name} key={image.id} />
-                  ))}
-                  {step.warning ? <strong>{step.warning}</strong> : null}
-                </section>
-              ))}
-            </div>
+            <WordPreview manual={manual} />
           )}
         </aside>
       </div>
     </main>
+  );
+}
+
+type PowerPointPreviewProps = {
+  manual: StoredManual;
+  previewStepIndex: number;
+  selectedStep: StoredStep | undefined;
+  onSelectStep: (index: number) => void;
+};
+
+function PowerPointPreview({
+  manual,
+  previewStepIndex,
+  selectedStep,
+  onSelectStep,
+}: PowerPointPreviewProps) {
+  return (
+    <div className="ppt-preview-shell">
+      <div className="slide-strip" aria-label="スライド">
+        <button
+          type="button"
+          className={previewStepIndex === 0 ? "active" : ""}
+          onClick={() => onSelectStep(0)}
+        >
+          表紙
+        </button>
+        {manual.steps.map((step, index) => (
+          <button
+            type="button"
+            className={previewStepIndex === index + 1 ? "active" : ""}
+            key={step.id}
+            onClick={() => onSelectStep(index + 1)}
+          >
+            STEP {index + 1}
+          </button>
+        ))}
+      </div>
+
+      {previewStepIndex === 0 ? (
+        <div className="slide-preview cover-slide">
+          <p>Manual</p>
+          <h2>{manual.title}</h2>
+          {manual.description ? <p>{manual.description}</p> : null}
+          <div className="cover-meta">
+            <span>{manual.category || "未分類"}</span>
+            <span>{new Date(manual.updatedAt).toLocaleDateString("ja-JP")}</span>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`slide-preview image-count-${selectedStep?.images.length ?? 0}`}
+        >
+          <div className="slide-heading">
+            <p>STEP {previewStepIndex}</p>
+            <h2>{selectedStep?.title || "無題の手順"}</h2>
+          </div>
+          <SlideImages images={selectedStep?.images ?? []} />
+          {selectedStep?.description ? <p>{selectedStep.description}</p> : null}
+          {selectedStep?.warning ? (
+            <strong className="warning-box">{selectedStep.warning}</strong>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SlideImages({ images }: { images: StoredStepImage[] }) {
+  if (images.length === 0) {
+    return <div className="text-layout-note">写真なしの文章中心レイアウト</div>;
+  }
+
+  return (
+    <div className={`preview-image-grid image-count-${images.length}`}>
+      {images.map((image) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={image.dataUrl} alt={image.name} key={image.id} />
+      ))}
+    </div>
+  );
+}
+
+function WordPreview({ manual }: { manual: StoredManual }) {
+  return (
+    <div className="word-preview">
+      <section className="word-cover">
+        <h2>{manual.title}</h2>
+        {manual.description ? <p>{manual.description}</p> : null}
+        <span>{manual.category || "未分類"}</span>
+      </section>
+      {manual.steps.map((step, index) => (
+        <section key={step.id}>
+          <h3>
+            STEP {index + 1} {step.title}
+          </h3>
+          {step.description ? <p>{step.description}</p> : null}
+          <div className={`word-image-stack image-count-${step.images.length}`}>
+            {step.images.map((image) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={image.dataUrl} alt={image.name} key={image.id} />
+            ))}
+          </div>
+          {step.warning ? <strong className="warning-box">{step.warning}</strong> : null}
+        </section>
+      ))}
+    </div>
   );
 }
