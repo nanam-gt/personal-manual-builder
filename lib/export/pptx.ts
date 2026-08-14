@@ -15,8 +15,11 @@ const COLORS = {
   accentDark: "0B5F59",
   panel: "EEF5F4",
   line: "D9E0DE",
+  descriptionBg: "F1FAF7",
+  descriptionBorder: "8BC5B8",
   warning: "9A3412",
   warningBg: "FFF7ED",
+  warningBorder: "FDBA74",
 };
 
 const textStyle = {
@@ -120,6 +123,57 @@ function addBodyText(
   });
 }
 
+function addDescriptionPanel(slide: pptxgen.Slide, text: string) {
+  slide.addText("説明", {
+    ...textStyle,
+    x: 8.72,
+    y: 1.72,
+    w: 3.65,
+    h: 2.35,
+    fontSize: 11,
+    bold: true,
+    color: COLORS.accentDark,
+    margin: [0.16, 0.18, 0.16, 0.18],
+    valign: "top",
+    breakLine: false,
+    fill: { color: COLORS.descriptionBg },
+    line: { color: COLORS.descriptionBorder, width: 1.1 },
+    fit: "shrink",
+  });
+  slide.addText(text || "説明は未入力です。", {
+    ...textStyle,
+    x: 8.92,
+    y: 2.16,
+    w: 3.25,
+    h: 1.55,
+    fontSize: 12,
+    color: COLORS.text,
+    margin: 0,
+    valign: "top",
+    breakLine: false,
+    fit: "shrink",
+  });
+}
+
+function addWarningPanel(slide: pptxgen.Slide, warning: string) {
+  slide.addText([{ text: "注意\n", options: { bold: true } }, { text: warning }], {
+    ...textStyle,
+    x: 8.72,
+    y: 4.3,
+    w: 3.65,
+    h: 1.55,
+    fontSize: 11.5,
+    bold: true,
+    color: COLORS.warning,
+    margin: [0.18, 0.2, 0.16, 0.2],
+    valign: "top",
+    breakLine: false,
+    fill: { color: COLORS.warningBg },
+    line: { color: COLORS.warningBorder, width: 1 },
+    fit: "shrink",
+  });
+}
+
 function addCoverSlide(pptx: pptxgen, manual: StoredManual) {
   const slide = pptx.addSlide();
   slide.background = { color: "FFFFFF" };
@@ -189,51 +243,45 @@ async function addStepSlide(pptx: pptxgen, step: StoredStep, stepIndex: number) 
   if (images.length === 0) {
     slide.addShape(pptx.ShapeType.rect, {
       x: 0.75,
-      y: 1.85,
-      w: 11.75,
-      h: 3.45,
+      y: 1.75,
+      w: 7.55,
+      h: 4.95,
       fill: { color: COLORS.panel },
       line: { color: COLORS.line },
     });
-    addBodyText(slide, step.description, 1.05, 2.15, 11.1, 2.9, 17);
+    slide.addText("写真なし", {
+      ...textStyle,
+      x: 0.75,
+      y: 3.75,
+      w: 7.55,
+      h: 0.5,
+      fontSize: 16,
+      color: COLORS.muted,
+      align: "center",
+      margin: 0,
+    });
   } else if (images.length === 1) {
     await addContainedImage(slide, images[0], {
       x: 0.75,
       y: 1.75,
-      w: 11.85,
-      h: 3.35,
+      w: 7.55,
+      h: 4.95,
     });
   } else {
     await Promise.all(images.map((image, index) => {
-      const x = index === 0 ? 0.75 : 6.75;
+      const x = index === 0 ? 0.75 : 4.65;
       return addContainedImage(slide, image, {
         x,
         y: 1.75,
-        w: 5.65,
-        h: 3.35,
+        w: 3.65,
+        h: 4.95,
       });
     }));
   }
 
-  if (images.length > 0) {
-    addBodyText(slide, step.description, 0.75, 5.3, step.warning ? 8.7 : 11.7, 0.75, 12);
-  }
-
-  if (step.warning) {
-    slide.addText(`注意: ${step.warning}`, {
-      ...textStyle,
-      x: 9.55,
-      y: 5.25,
-      w: 2.9,
-      h: 0.85,
-      fontSize: 11,
-      bold: true,
-      color: COLORS.warning,
-      margin: 0.08,
-      fill: { color: COLORS.warningBg },
-      line: { color: "FED7AA" },
-      fit: "shrink",
-    });
+  addDescriptionPanel(slide, step.description);
+  if (step.warning.trim()) {
+    addWarningPanel(slide, step.warning);
   }
 }
 

@@ -421,11 +421,21 @@ function PowerPointPreview({
             <p>STEP {previewStepIndex}</p>
             <h2>{selectedStep?.title || "無題の手順"}</h2>
           </div>
-          <SlideImages images={selectedStep?.images ?? []} />
-          {selectedStep?.description ? <p>{selectedStep.description}</p> : null}
-          {selectedStep?.warning ? (
-            <strong className="warning-box">{selectedStep.warning}</strong>
-          ) : null}
+          <div className="ppt-step-layout">
+            <SlideImages images={selectedStep?.images ?? []} />
+            <div className="ppt-side-panel">
+              <section className="description-box">
+                <h3>説明</h3>
+                <p>{selectedStep?.description || "説明は未入力です。"}</p>
+              </section>
+              {selectedStep?.warning ? (
+                <section className="warning-box">
+                  <h3>注意</h3>
+                  <p>{selectedStep.warning}</p>
+                </section>
+              ) : null}
+            </div>
+          </div>
         </div>
       )}
     </div>
