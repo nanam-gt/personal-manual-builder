@@ -133,23 +133,12 @@ function addDescriptionPanel(slide: pptxgen.Slide, text: string) {
     fill: { color: COLORS.descriptionBg },
     line: { color: COLORS.descriptionBorder, width: 1.1 },
   });
-  slide.addText("説明", {
-    ...textStyle,
-    x: 9.02,
-    y: 1.98,
-    w: 3.1,
-    h: 0.28,
-    fontSize: 11,
-    bold: true,
-    color: COLORS.accentDark,
-    margin: 0,
-  });
   slide.addText(text || "説明は未入力です。", {
     ...textStyle,
     x: 9.02,
-    y: 2.38,
+    y: 2.0,
     w: 3.08,
-    h: 1.38,
+    h: 1.75,
     fontSize: 12,
     color: COLORS.text,
     margin: 0,

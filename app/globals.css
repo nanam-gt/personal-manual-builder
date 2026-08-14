@@ -531,15 +531,10 @@ td span {
   padding: 16px 18px;
 }
 
-.description-box h3,
 .ppt-side-panel .warning-box h3 {
   font-size: 12px;
   line-height: 1.2;
   margin: 0;
-}
-
-.description-box h3 {
-  color: var(--accent-dark);
 }
 
 .description-box p,

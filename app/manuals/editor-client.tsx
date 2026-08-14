@@ -425,7 +425,6 @@ function PowerPointPreview({
             <SlideImages images={selectedStep?.images ?? []} />
             <div className="ppt-side-panel">
               <section className="description-box">
-                <h3>説明</h3>
                 <p>{selectedStep?.description || "説明は未入力です。"}</p>
               </section>
               {selectedStep?.warning ? (
