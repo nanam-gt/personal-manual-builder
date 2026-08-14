@@ -1,0 +1,13 @@
+name = "personal-manual-builder"
+main = ".open-next/worker.js"
+compatibility_date = "2026-08-14"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "personal-manual-builder-db"
+database_id = "replace-with-new-d1-database-id"
+
+[[r2_buckets]]
+binding = "MANUAL_IMAGES"
+bucket_name = "personal-manual-builder-images"
